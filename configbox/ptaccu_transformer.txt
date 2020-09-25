@@ -1,0 +1,69 @@
+{
+    "paths": {
+        "data": "/database/ptaccu",
+        "logs": "/records/logs/ptaccu",
+        "ckpts": "/records/checkpoints/ptaccu",
+        "models": "/records/models/ptaccu",
+        "type": "storage"
+    },
+    "params": {
+        "identity": "ptaccu",
+        "extrainfo": "teachforce_exoinfer",
+        "learning_rate": 0.001,
+        "batchsize": 64,
+        "epochs": 100,
+        "loss": "mse",
+        "optimizer": "adam",
+        "inputlength": 168,
+        "outputlength": 24,
+        "samplestep": 1,
+        "inputs": [
+            "ppusage_BrooksideHomes",
+            "ppusage_CentervilleHomes",
+            "ppusage_DowntownOffices",
+            "ppusage_EastsideOffices",
+            "ppusage_FrostyStorage",
+            "ppusage_HextraChemical",
+            "ppusage_MedicalCenter-1",
+            "ppusage_OfficeComplex 1 NS Base",
+            "ppusage_OfficeComplex 1 NS Controllable",
+            "ppusage_OfficeComplex 1 SS Base",
+            "ppusage_OfficeComplex 1 SS Controllable",
+            "ppusage_OfficeComplex 2 NS Base",
+            "ppusage_OfficeComplex 2 NS Controllable",
+            "ppusage_OfficeComplex 2 SS Base",
+            "ppusage_OfficeComplex 2 SS Controllable",
+            "ppusage_Village 1 NS Base",
+            "ppusage_Village 1 NS Controllable",
+            "ppusage_Village 1 RaS Base",
+            "ppusage_Village 1 RaS Controllable",
+            "ppusage_Village 1 ReS Base",
+            "ppusage_Village 1 ReS Controllable",
+            "ppusage_Village 1 SS Base",
+            "ppusage_Village 1 SS Controllable",
+            "ppusage_Village 2 NS Base",
+            "ppusage_Village 2 NS Controllable",
+            "ppusage_Village 2 RaS Base",
+            "ppusage_Village 2 RaS Controllable",
+            "ppusage_Village 2 ReS Base",
+            "ppusage_Village 2 ReS Controllable",
+            "ppusage_Village 2 SS Base",
+            "ppusage_Village 2 SS Controllable",
+            "ppusage_fc2",
+            "ppusage_fc3",
+            "ppusage_freezeco-1",
+            "ppusage_freezeco-2",
+            "ppusage_freezeco-3",
+            "ppusage_seafood-1",
+            "ppusage_seafood-2",
+            "ppusage_sf2",
+            "ppusage_sf3"
+        ],
+        "exogenous": [
+            "tariff"
+        ]
+    },
+    "algoparams": {
+        "netdesign": "encdec"
+    }
+}
