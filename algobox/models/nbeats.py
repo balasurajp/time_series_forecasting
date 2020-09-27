@@ -40,6 +40,7 @@ class NBeatsNet:
         self.nb_blocks_per_stack = defaultparams['blocks_per_stack']
         self.share_weights_in_stack = defaultparams['share_blockweights']
         self.nb_harmonics = defaultparams['harmonics']
+        self.hiddenunits = defaultparams['hidden_units']
         assert len(self.stack_types) == len(self.thetas_dim), "Stack dimension doesn't match Theta dimension"
 
     def has_exog(self):

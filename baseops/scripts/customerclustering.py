@@ -66,7 +66,7 @@ for file in files:
     dates = df['timestamp'].dt.date.unique()
     np.random.shuffle(dates)
     
-    checkdates = dates[0:30]
+    checkdates = dates[0:5]
     df = df[df['timestamp'].dt.date.isin(checkdates)].reset_index(drop=True)
     
     for name in filecustomers:
@@ -86,7 +86,7 @@ X = np.concatenate(X, axis=0)
 Y = np.concatenate(Y, axis=0)
 print(X.shape, Y.shape)
     
-model = TimeSeriesKMeans(n_clusters=4, metric="softdtw", max_iter=40, metric_params={"gamma": .01}, verbose=True)
+model = TimeSeriesKMeans(n_clusters=3, metric="softdtw", max_iter=40, metric_params={"gamma": .01}, n_jobs=10, verbose=True)
 C = model.fit_predict(X)
 
 
@@ -102,7 +102,6 @@ for clustername in dataframe['clustername'].unique():
     df = pd.merge(df, pd.DataFrame.from_records({'customers':filecustomers}), on=['customers'], how='right', validate='1:1')
     df.fillna(0, inplace=True)
     df.sort_values(by=['customers'], key=lambda x: x.map({name:idno for idno,name in enumerate(filecustomers)}), inplace=True)
-
     fig.add_trace( go.Bar(x=df['customers'], y=df['count'], text=df['count'], textposition='outside', visible=True, name=clustername) )
 
 fig.update_layout(title=f"PowerTAC Customers Clustering", xaxis_title="Customers", yaxis_title="Cluster Selection")

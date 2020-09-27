@@ -5,7 +5,9 @@ import pandas as pd, numpy as np
 from utilsbox.misc import normalScaler, tanhScaler
 from joblib import Parallel, delayed
 from glob import glob
-    
+from category_encoders.binary import BinaryEncoder
+from category_encoders.leave_one_out import LeaveOneOutEncoder
+
 def NormalizeColumns(dataframe, columns, scalebook):
     columns = [column for column in columns if column!='timestamp']
     checker = len(scalebook)
@@ -23,33 +25,27 @@ def NormalizeTensor(X, X_mu=None, X_std=None):
         X_mu = np.mean(X, axis=1, keepdims=True)
         X_std = np.std(X, axis=1, keepdims=True)
         X_normalised = (X-X_mu)/X_std
-        X_std = np.clip(X_std, 0.5, np.inf)
         return X_normalised, X_mu, X_std
     else:
         X_normalised = (X-X_mu)/X_std
         return X_normalised
 
-def ProcessTimestamp(dataframe, columns, method='default'):
+def ProcessTimestamp(dataframe, columns, method, mode):
     columns = [column for column in columns if column!='timestamp']
     dataframe['month']  = dataframe['timestamp'].dt.month -1
     dataframe['mday']   = dataframe['timestamp'].dt.day -1
     dataframe['wday']   = dataframe['timestamp'].dt.weekday
     dataframe['hour']   = dataframe['timestamp'].dt.hour
-    if method=='default':
-        dataframe['month'] = (dataframe['month'] - 6.0)/6.0
-        dataframe['mday'] = (dataframe['mday'] - 15.0)/15.0
-        dataframe['wday'] = (dataframe['wday'] - 3.0)/3.0
-        dataframe['hour'] = (dataframe['hour'] - 12.0)/12.0
+    if method=='ordinal':
         tcolumns = ['month', 'mday', 'wday', 'hour']
-    elif method=='base2encode':
-        for featureno in [1,2,3,4]:
-            dataframe[f'month_{featureno}'] = dataframe['month'].apply(lambda x: int(format(x,'04b')[featureno-1]))
-        for featureno in [1,2,3,4,5]:
-            dataframe[f'mday_{featureno}'] = dataframe['mday'].apply(lambda x: int(format(x,'05b')[featureno-1]))
-        for featureno in [1,2,3]:
-            dataframe[f'wday_{featureno}'] = dataframe['wday'].apply(lambda x: int(format(x,'03b')[featureno-1]))
-        for featureno in [1,2,3,4,5]:
-            dataframe[f'hour_{featureno}'] = dataframe['hour'].apply(lambda x: int(format(x,'05b')[featureno-1]))
+    elif method=='binary':
+        binaryenc = BinaryEncoder(cols=['month','mday','wday','hour'])
+        timecategory = pd.DataFrame.from_records({'month':np.arange(12).tolist()+np.zeros((19)).tolist(), 'mday':np.arange(31), 'wday':np.arange(7).tolist()+np.zeros((24)).tolist(), 'hour':np.arange(24).tolist()+np.zeros((7)).tolist()})
+        timecategory.loc[:,['month','mday','wday','hour']] = timecategory.loc[:,['month','mday','wday','hour']].astype('category')
+
+        binaryenc.fit(timecategory)
+        timeframe = binaryenc.transform(dataframe.loc[:, ['month','mday','wday','hour']])
+        dataframe = pd.concat([dataframe, timeframe], axis=1)
         tcolumns = [f'month_{i}' for i in range(1,5)] + [f'mday_{i}' for i in range(1,6)] + [f'wday_{i}' for i in range(1,4)] + [f'hour_{i}' for i in range(1,6)]       
     else:
         raise NotImplementedError(f'must implement {method} for timestamp processing')
@@ -112,7 +108,7 @@ def SupervisedSampler(dataframe, params, timecolumns, mode):
     return inputs, targets, scalers
 
 def reading_default(paths, params, encodingtime='default', mode='train'):
-    datafiles = glob(f"{paths['data']}/*_train.csv")
+    datafiles = glob(f"{paths['data']}/*_{mode}.csv")
     datacolumns = ['timestamp'] + params['inputs'] + params['exogenous']
 
     # scalebook = joblib.load(f"{paths['data']}/scalebook.pkl") if mode=='test' else {}
@@ -130,7 +126,7 @@ def reading_default(paths, params, encodingtime='default', mode='train'):
         #     dataframe = dataframe.tail(168*24+int(ndays*0.2)*24).reset_index(drop=True)
 
         # dataframe = NormalizeColumns(dataframe, datacolumns, scalebook)
-        dataframe, timecolumns = ProcessTimestamp(dataframe, datacolumns, method=encodingtime)
+        dataframe, timecolumns = ProcessTimestamp(dataframe, datacolumns, encodingtime, mode)
         inputs, targets, scalers = SupervisedSampler(dataframe, params, timecolumns, mode)
         processbook = {'filename':filename, 'inputs': inputs, 'targets': targets, 'scalers': scalers}
         return processbook
@@ -162,6 +158,18 @@ def combine_databook(databook):
     targetbook = np.concatenate(targetbook, axis=0)
     for index in range(len(scalerbook)):
         scalerbook[index] = np.concatenate(scalerbook[index], axis=0)
+
+    nsamples = 128000
+    if len(targetbook) > nsamples:
+        idxs = np.random.permutation(nsamples)
+    else:
+        idxs = np.random.permutation(len(targetbook))
+
+    for index in range(len(inputbook)):
+        inputbook[index] = inputbook[index][idxs]
+    targetbook = targetbook[idxs]
+    for index in range(len(scalerbook)):
+        scalerbook[index] = scalerbook[index][idxs]
 
     mybook = {'inputs': inputbook, 'targets':targetbook, 'scalers':scalerbook}
     return mybook

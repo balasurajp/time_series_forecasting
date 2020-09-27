@@ -5,13 +5,13 @@ from algobox.layers.attention import *
 
 defaultparams = {
     'n_layers': 2,
-    'attention_hidden_size': 32*8,
+    'attention_hidden_size': 16*8,
     'num_heads': 8,
-    'ffn_hidden_size': 32*8,
-    'ffn_filter_size': 32*8,
-    'attention_dropout': 0.2,
-    'relu_dropout': 0.2,
-    'layer_postprocess_dropout': 0.2,
+    'ffn_hidden_size': 16*8,
+    'ffn_filter_size': 16*8,
+    'attention_dropout': 0.1,
+    'relu_dropout': 0.1,
+    'layer_postprocess_dropout': 0.1,
 }
 
 
@@ -23,6 +23,7 @@ class TransformerNet(object):
         self.params['exogdimension'] = exogdimension
         self.params['inputlength'] = inputlength
         self.params['outputlength'] = outputlength
+        self.hiddenunits = self.params['attention_hidden_size']
 
         self.embedding_layer = EmbeddingLayer(embedding_size=self.params['attention_hidden_size'])
         self.encoder_stack = EncoderStack(self.params)
@@ -38,6 +39,7 @@ class TransformerNet(object):
         mx2 = Input([self.params['outputlength'], self.params['inputdim']])
         e2 = Input([self.params['outputlength'], self.params['exogdimension']])
 
+        teacherforcing = False
         x1_container, x2_container, y_container = {}, {}, {}
         for inputno in range(self.params['inputdim']):
             x1_container[inputno] = Lambda(lambda z: z[..., inputno])(mx1)
@@ -58,14 +60,14 @@ class TransformerNet(object):
             src_mask = self.get_src_mask_bias(src_mask)  # => batch_size * 1 * 1 * input_sequence_length
             memory = self.encoder(encoder_inputs=encoder_feature, mask=src_mask, training=training)
 
-            if training:
+            if training and teacherforcing:
                 decoder_inputs = tf.concat([x1[:, -1:, :], teacherforce[:, :-1, :]], axis=1)
                 decoder_inputs = tf.concat([decoder_inputs, decoder_feature], axis=-1)
 
                 decoder_output = self.decoder(decoder_inputs, memory, src_mask, training=training, outputlength=self.params['outputlength'])
                 y = self.projection(decoder_output)
             else:
-                decoder_inputs = decoder_inputs_update = tf.cast(x1[:, -1:, 0:1], tf.float32)
+                decoder_inputs = decoder_inputs_update = tf.cast(x1[:, -1:, :], tf.float32)
                 for i in range(self.params['outputlength']):
                     decoder_inputs_update = tf.concat([decoder_inputs_update, decoder_feature[:, :i+1, :]], axis=-1)
                     decoder_inputs_update = self.decoder(decoder_inputs_update, memory, src_mask, training, outputlength=1)
@@ -88,7 +90,7 @@ class TransformerNet(object):
             src += self.position_encoding_layer_enc(src)
 
             if training:
-                src = tf.nn.dropout(src, rate=0.01)  # batch_size * sequence_length * attention_hidden_size
+                src = tf.nn.dropout(src, rate=self.params['attention_dropout'])  # batch_size * sequence_length * attention_hidden_size
 
             return self.encoder_stack(src, mask, training)
 

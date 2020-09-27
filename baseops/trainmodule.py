@@ -29,7 +29,7 @@ def getConfig(configName, arguments):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='TIME SERIES FORECASTING TRAIN MODULE')
     parser.add_argument('-alg',     '--algorithm',        type=str,       required=True,      default=None,     help='TSF algorithm')
-    parser.add_argument('-tfm',     '--tensorflowmode',   type=str,       required=False,     default='fit',    help='Tensorflow mode')
+    parser.add_argument('-tfm',     '--tensorflowmode',   type=str,       required=False,     default='eager',  help='Tensorflow mode')
     parser.add_argument('-cfg',     '--configuration',    type=str,       required=True,      default=None,     help='configuration file')
     parser.add_argument('-gpu',     '--gpuids',           type=str,       required=False,     default='0',      help='gpu devices id')
     parser.add_argument('-isl',     '--inputlength',      type=int,       required=False,     default=None,     help='Timeseries Input Sequence length')

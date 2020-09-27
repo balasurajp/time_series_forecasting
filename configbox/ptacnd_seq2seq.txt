@@ -9,20 +9,26 @@
     "params": {
         "identity": "ptacnd",
         "extrainfo": "teachforce_exoinfer",
-        "learning_rate": 0.001,
+        "learning_rate": 0.0009,
         "batchsize": 64,
-        "epochs": 100,
+        "epochs": 60,
         "loss": "mse",
         "optimizer": "adam",
         "inputlength": 168,
         "outputlength": 24,
         "samplestep": 1,
         "inputs": [
-            "netdemand"
+            "netconsumption",
+            "netproduction"
         ],
         "exogenous": []
     },
     "algoparams": {
-        "netdesign": "encdec"
+        "netdesign": "encdec",
+        "hidden_size": 512,
+        "use_attention": true,
+        "num_heads": 8,
+        "hidden_dropout": 0.4,
+        "attention_dropout": 0.4
     }
 }

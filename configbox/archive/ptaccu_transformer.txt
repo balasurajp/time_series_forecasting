@@ -10,7 +10,7 @@
         "identity": "ptaccu",
         "extrainfo": "teachforce_exoinfer",
         "learning_rate": 0.001,
-        "batchsize": 64,
+        "batchsize": 16,
         "epochs": 100,
         "loss": "mse",
         "optimizer": "adam",

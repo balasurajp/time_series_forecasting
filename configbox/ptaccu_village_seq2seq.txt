@@ -1,0 +1,50 @@
+{
+    "paths": {
+        "data": "/database/ptaccu",
+        "logs": "/records/logs/ptaccu_village",
+        "ckpts": "/records/checkpoints/ptaccu_village",
+        "models": "/records/models/ptaccu_village",
+        "type": "storage"
+    },
+    "params": {
+        "identity": "ptaccu_village",
+        "extrainfo": "teachforce_exoinfer",
+        "learning_rate": 0.0009,
+        "batchsize": 64,
+        "epochs": 60,
+        "loss": "mse",
+        "optimizer": "adam",
+        "inputlength": 168,
+        "outputlength": 24,
+        "samplestep": 1,
+        "inputs": [
+            "ppusage_Village 1 NS Base",
+            "ppusage_Village 1 NS Controllable",
+            "ppusage_Village 1 RaS Base",
+            "ppusage_Village 1 RaS Controllable",
+            "ppusage_Village 1 ReS Base",
+            "ppusage_Village 1 ReS Controllable",
+            "ppusage_Village 1 SS Base",
+            "ppusage_Village 1 SS Controllable",
+            "ppusage_Village 2 NS Base",
+            "ppusage_Village 2 NS Controllable",
+            "ppusage_Village 2 RaS Base",
+            "ppusage_Village 2 RaS Controllable",
+            "ppusage_Village 2 ReS Base",
+            "ppusage_Village 2 ReS Controllable",
+            "ppusage_Village 2 SS Base",
+            "ppusage_Village 2 SS Controllable"
+        ],
+        "exogenous": [
+            "tariff"
+        ]
+    },
+    "algoparams": {
+        "netdesign": "encdec",
+        "hidden_size": 512,
+        "use_attention": true,
+        "num_heads": 8,
+        "hidden_dropout": 0.4,
+        "attention_dropout": 0.4
+    }
+}

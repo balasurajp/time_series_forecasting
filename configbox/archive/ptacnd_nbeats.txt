@@ -8,9 +8,10 @@
     },
     "params": {
         "identity": "ptacnd",
-        "learning_rate": 0.001,
+        "extrainfo": "teachforce_exoinfer",
+        "learning_rate": 0.0009,
         "batchsize": 64,
-        "epochs": 100,
+        "epochs": 50,
         "loss": "mse",
         "optimizer": "adam",
         "inputlength": 168,
@@ -19,29 +20,22 @@
         "inputs": [
             "netdemand"
         ],
-        "exogenous": [
-            "netdemand_GWA",
-            "netdemand_EWA"
-        ]
+        "exogenous": []
     },
     "algoparams": {
         "netdesign": "os",
-        "dropout_rate": 0.4,
+        "dropout_rate": 0.2,
         "hidden_units": 256,
         "stack_types": [
-            "seasonality",
-            "seasonality",
             "generic",
             "generic"
         ],
         "thetas_dim": [
             8,
-            8,
-            8,
             8
         ],
         "blocks_per_stack": 4,
-        "share_blockweights": true,
+        "share_blockweights": false,
         "harmonics": false
     }
 }

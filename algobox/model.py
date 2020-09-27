@@ -4,8 +4,21 @@ from tensorflow.keras.layers import Input
 from tensorflow.keras.callbacks import ReduceLROnPlateau, EarlyStopping,  ModelCheckpoint, TensorBoard
 from algobox.models.nbeats import NBeatsNet
 from algobox.models.transformer import TransformerNet
+from algobox.models.seq2seq import Seq2seqNet
 from utilsbox.misc import avgmeter
 from tqdm import tqdm
+
+class CustomTransformerSchedule(tf.keras.optimizers.schedules.LearningRateSchedule):
+    def __init__(self, d_model, warmup_steps=2000):
+        super(CustomTransformerSchedule, self).__init__()
+        self.d_model = d_model
+        self.d_model = tf.cast(self.d_model, tf.float32)
+        self.warmup_steps = warmup_steps
+        
+    def __call__(self, step):
+        arg1 = tf.math.rsqrt(step)
+        arg2 = step * (self.warmup_steps ** -1.5)
+        return tf.math.rsqrt(self.d_model) * tf.math.minimum(arg1, arg2)
 
 class Loss(object):
     def __init__(self, use_loss):
@@ -25,14 +38,18 @@ class Loss(object):
 
 
 class Optimizer(object):
-    def __init__(self, use_optimizer):
+    def __init__(self, use_optimizer, hiddenunits=128):
         self.use_optimizer = use_optimizer
+        self.hiddenunits = hiddenunits
 
     def __call__(self, learning_rate):
         if self.use_optimizer == 'adam':
             return tf.keras.optimizers.Adam(lr=learning_rate)
         elif self.use_optimizer == 'sgd':
             return tf.keras.optimizers.SGD(lr=learning_rate)
+        elif self.use_optimizer == 'adamtransformer':
+            tlrs = CustomTransformerSchedule(self.hiddenunits)
+            return tf.keras.optimizers.Adam(tlrs, beta_1=0.9, beta_2=0.98, epsilon=1e-9)
         else:
             raise ValueError(f"Not supported optimizer: {self.use_optimizer}")
 
@@ -53,17 +70,19 @@ class TimeSeriesModel(object):
         self.input_length = self.params['inputlength']
         self.output_length = self.params['outputlength']
 
-    def build_model(self):
+    def build_model(self, training):
         if self.use_model == 'nbeats':
             tsnetwork = NBeatsNet(self.input_dimension, self.exog_dimension, self.input_length, self.output_length, self.custom_model_params)
         elif self.use_model == 'transformer':
             tsnetwork = TransformerNet(self.input_dimension, self.exog_dimension, self.input_length, self.output_length, self.custom_model_params)
+        elif self.use_model == 'seq2seq':
+            tsnetwork = Seq2seqNet(self.input_dimension, self.exog_dimension, self.input_length, self.output_length, self.custom_model_params)
         else:
             raise ValueError(f"unsupported use_model named {self.use_model} yet")
 
-        self.tsmodel = tsnetwork(training=True)
+        self.tsmodel = tsnetwork(training=training)
         self.loss_fn = Loss(self.use_loss)()
-        self.optimizer_fn = Optimizer(self.use_optimizer)(learning_rate=self.params['learning_rate'])
+        self.optimizer_fn = Optimizer(self.use_optimizer, tsnetwork.hiddenunits)(learning_rate=self.params['learning_rate'])
 
     @tf.function
     def trnstep(self, data):
@@ -73,7 +92,7 @@ class TimeSeriesModel(object):
             batchloss = self.loss_fn(targets, outputs)
 
         gradients = tape.gradient(batchloss, self.tsmodel.trainable_variables)
-        gradients = [(tf.clip_by_value(gradient, -10.0, 10.0)) for gradient in gradients]
+        # gradients = [(tf.clip_by_value(gradient, -10.0, 10.0)) for gradient in gradients]
         self.optimizer_fn.apply_gradients(zip(gradients, self.tsmodel.trainable_variables))
         
         self.trnsteps.assign_add(1)
@@ -92,7 +111,7 @@ class TimeSeriesModel(object):
         print("-" * 35)
         print(f"Starting training {self.use_model} in {mode} mode")
         print("-" * 35)
-        self.build_model()
+        self.build_model(training=True)
         dataset = dataloader.get_samples()
         dataset.pop('scalers')
         if self.custom_model_params['netdesign']=='oneshot':
@@ -158,7 +177,7 @@ class TimeSeriesModel(object):
         print("-" * 35)
         print(f"Starting testing {self.use_model}")
         print("-" * 35)
-        self.build_model()
+        self.build_model(training=False)
         self.importmodel()
 
         dataset = dataloader.get_databook()

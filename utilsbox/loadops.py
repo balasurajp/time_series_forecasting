@@ -20,8 +20,8 @@ class PowerTAC:
 			else:
 				logging.info(f"Reading data from data fileStorage")
 				print("Reading data from data fileStorage")
-				self.databook = reading_default(self.paths, self.params, encodingtime='base2encode', mode=datamode)
-				# joblib.dump(self.databook, f"/tmp/PowerTAC_{self.params['identity']}_{datamode}book.pkl")
+				self.databook = reading_default(self.paths, self.params, encodingtime='binary', mode=datamode)
+				joblib.dump(self.databook, f"/tmp/PowerTAC_{self.params['identity']}_{datamode}book.pkl")
 	
 		elif self.paths['type']=='mongo':
 			raise NotImplementedError('must implement mongodb retrieval')
