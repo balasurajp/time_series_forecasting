@@ -1,5 +1,5 @@
 # TimeSeriesForecasting
 Algorithms:
-  - Nbeats
   - Seq2Seq
-  - Transformers
+  - Transformer
+  - Nbeats
